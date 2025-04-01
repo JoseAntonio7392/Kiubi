@@ -21,7 +21,6 @@ CREATE TABLE vuelos (
     estado VARCHAR(50)
 );
 
--- Datos de ejemplo
 INSERT INTO aeropuertos (nombre, ciudad, pais, codigo, codigo_iata) 
 VALUES ('Aeropuerto Internacional de la Ciudad de México', 'Ciudad de México', 'México', 'MEX', 'MEX'),
        ('Aeropuerto Internacional de Cancún', 'Cancún', 'México', 'CUN', 'CUN');

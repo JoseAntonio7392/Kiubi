@@ -6,16 +6,15 @@ import os
 app = Flask(__name__)
 
 def get_db_connection():
-    # Usamos la variable de entorno para docker-compose, o localhost para pruebas manuales
-    db_url = os.environ.get('DATABASE_URL', 'dbname=kiubi_db user=postgres password=1234 host=localhost port=5433')
+    db_url = os.environ.get('DATABASE_URL', 'dbname=kiubi_db user=postgres password=1234 host=localhost port=5432')
     conn = psycopg2.connect(db_url)
     return conn
 
 @app.route('/api/vuelos', methods=['GET'])
 def buscar_vuelos():
-    origin = request.args.get('origin', '').upper()  # Código IATA del aeropuerto de origen
-    destination = request.args.get('destination', '').upper()  # Código IATA del destino
-    date = request.args.get('date', '')  # Fecha en formato YYYY-MM-DD
+    origin = request.args.get('origin', '').upper()
+    destination = request.args.get('destination', '').upper()
+    date = request.args.get('date')
 
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
@@ -28,7 +27,7 @@ def buscar_vuelos():
             v.hora_salida, 
             v.precio, 
             v.moneda, 
-            v.duracion, 
+            v.duracion::text AS duracion,  -- Convertimos INTERVAL a texto
             v.asientos_disponibles, 
             v.estado
         FROM vuelos v
@@ -36,9 +35,9 @@ def buscar_vuelos():
         JOIN aeropuertos a_destino ON v.aeropuerto_llegada_id = a_destino.id
         WHERE (a_origen.codigo_iata = %s OR %s = '')
         AND (a_destino.codigo_iata = %s OR %s = '')
-        AND (DATE(v.hora_salida) = %s OR %s = '')
+        AND (%s IS NULL OR DATE(v.hora_salida) = %s)
     """
-    cur.execute(query, (origin, origin, destination, destination, date, date))
+    cur.execute(query, (origin, origin, destination, destination, date or None, date))
     resultados = cur.fetchall()
     cur.close()
     conn.close()
